@@ -44,7 +44,9 @@ func EnsureCleanState() error {
 }
 
 func deleteNamespace(ctx context.Context, name string, k8sClient kubernetes.Interface) error {
-	return wait.PollImmediate(3*time.Second, 5*time.Minute, func() (done bool, err error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
+	return wait.PollUntilContextTimeout(ctx, 3*time.Second, 5*time.Minute, true, func(ctx context.Context) (done bool, err error) {
 		err = k8sClient.CoreV1().Namespaces().Delete(ctx, name, metav1.DeleteOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
